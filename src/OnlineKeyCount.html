@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>网页关键字查询</title>
+    <!--<script src="http://code.jquery.com/jquery-1.9.1.min.js" type="text/javascript"></script>-->
+    <style>
+        tr,table,td,th {
+            border: 1px solid grey;
+        }
+        table{
+            border: 1px solid grey;
+            width:100%;
+        }
+    </style>
+    <script>
+        //读取文件
+        function getCount()
+        {
+            var file=document.getElementById("file");
+            var reader =new FileReader();
+            reader.readAsText(file.files[0],"GBK");
+            document.getElementById("scrollText").innerText="正在读取文件哦😂😂";
+            reader.onload=function(){
+                document.getElementById("scrollText").innerText="读取文件完成🙃🙃🙃🙃";
+                analysis(this.result);
+                document.getElementById("scrollText").innerText="️统计完成啦☺️☺️";
+            }
+        }
+        //解析文件
+        function analysis(str){
+            var rows=str.split(/\s+/);
+            for(var i=0;i<rows.length;i+=2){
+                var url=rows[i];
+                var key=rows[i+1];
+                count(url,key);
+                document.getElementById("scrollText").innerText="正在统计请稍等哦😯😯";
+            }
+        }
+        //计算URL返回的HTML包含的关键字
+        function count(url,key){
+            var xhr = new XMLHttpRequest();
+            xhr.open('get', url, true);
+            xhr.dataType="html";
+            xhr.send();
+            xhr.onreadystatechange=function() {
+                if (xhr.readyState == 4) {
+                    if (xhr.status == 200) {
+                        var count=countNumber(this.responseText,key);
+                        // var keyWord=undefined;
+                        // var progressBar=undefined;
+                        appendHtml(url,key,count);
+                    }else{
+                        appendHtml(url,key,"访问异常");
+                    }
+                }
+
+            }
+        }
+        //计算字符串中包含的关键字
+        function countNumber(str,key){
+            var reg=new RegExp(key,"g");
+            var result=str.match(reg);
+            if(result==undefined){
+                return 0;
+            }else{
+                return result.length;
+            }
+        }
+        //生成查询的表格
+        function appendHtml(url,key,count){
+            var table=document.getElementById("tableContent");
+            var tr=document.createElement("tr");
+            tr.setAttribute("name","row");
+            table.appendChild(tr);
+            for(var i=0;i<arguments.length;i++){
+                var td=document.createElement("td");
+                td.innerText=arguments[i];
+                tr.appendChild(td);
+            }
+        }
+        //清空查询列表
+        function clearTable(){
+            var nodes=document.getElementsByName("row");
+            for(var i=nodes.length-1;i>=0;i--){
+                nodes[i].remove();
+            }
+            document.getElementById("scrollText").innerText="啦啦啦啦啦啦啦啦😎😎😎😎";
+        }
+    </script>
+    </head>
+<body>
+<div>
+
+</div>
+<DIV style="float:left;width:33%;">
+    <diV style="float:left;">
+        <INPUT id="file" type="file" />
+    </diV>
+    <div style="float:RIGHT;">
+        <button onclick="getCount()">开始统计</button>
+        <button onclick="clearTable()" style="margin-right:0px;">清空查询列表</button>
+        <!--<button>下载</button>-->
+    </div>
+</DIV>
+<DIV style="float:left;width:67%;">
+    <marquee id="scrollText" behavior=alternate scrollamount=10 direction=right>啦啦啦啦啦啦啦啦😎😎😎😎</marquee>
+</DIV>
+<table id="tableContent">
+    <tr>
+        <th>链接</th>
+        <th>关键字</th>
+        <th>统计</th>
+        <!--<th>keyWord</th>-->
+        <!--<th>进度条</th>-->
+    </tr>
+</table>
+</body>
+
+</html>

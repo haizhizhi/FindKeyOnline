@@ -30,9 +30,10 @@
         //解析文件
         function analysis(str){
             var rows=str.split(/\s+/);
-            for(var i=0;i<rows.length;i+=2){
-                var url=rows[i];
-                var key=rows[i+1];
+            for(var i=0;i<rows.length;i++){
+                var line=rows[i].split(",");
+                var url=line[0];
+                var key=line[1];
                 count(url,key);
                 document.getElementById("scrollText").innerText="正在统计请稍等哦😯😯";
             }

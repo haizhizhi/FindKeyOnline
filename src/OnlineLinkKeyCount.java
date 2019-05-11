@@ -6,6 +6,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class OnlineLinkKeyCount {
+
     public static void main(String[] args){
         //请求的url
         URL url = null;
@@ -37,7 +38,6 @@ public class OnlineLinkKeyCount {
         int num = appearNumber(result, findText);
 
         System.out.print(num);
-
     }
 
     public static int appearNumber(String srcText, String findText) {

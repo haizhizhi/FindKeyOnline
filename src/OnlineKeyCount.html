@@ -14,53 +14,156 @@
         }
     </style>
     <script>
+        //得到结果临时表并排序
+        var temp_result=[];
+
         //读取文件
         function getCount()
         {
             var file=document.getElementById("file");
             var reader =new FileReader();
             reader.readAsText(file.files[0],"GBK");
-            document.getElementById("scrollText").innerText="正在读取文件哦😂😂";
+            // document.getElementById("scrollText").innerText="正在读取文件哦😂😂";
             reader.onload=function(){
-                document.getElementById("scrollText").innerText="读取文件完成🙃🙃🙃🙃";
+                // document.getElementById("scrollText").innerText="读取文件完成🙃🙃🙃🙃";
                 analysis(this.result);
-                document.getElementById("scrollText").innerText="️统计完成啦☺️☺️";
+            }
+            reader.onloadend=function(){
+                document.getElementById("progress1").setAttribute("max",temp_result.length.toString());
+                document.getElementById("totalNum").innerText=temp_result.length.toString();
+                document.getElementById("countNum").innerText="0";
+                document.getElementById("progress2").style.display="block";
+                start(temp_result);
             }
         }
         //解析文件
         function analysis(str){
+            // document.getElementById("scrollText").innerText="正在统计请稍等哦😯😯";
             var rows=str.split(/\s+/);
             for(var i=0;i<rows.length;i++){
+                if(rows[i].trim()==""){
+                    continue;
+                }
                 var line=rows[i].split(",");
-                var url=line[0];
-                var key=line[1];
-                count(url,key);
-                document.getElementById("scrollText").innerText="正在统计请稍等哦😯😯";
+                var num=line[0];
+                var url=line[1];
+                var key=line[2];
+                appendHtml(num,url,key,"敬请期待","等待中。。。","响应中。。。");
+                temp_result.push({
+                    num:num,
+                    url:url,
+                    key:key
+                });
             }
         }
+
+        // function pushTempArray(num,url,key,count){
+        //     var lineObject={
+        //         num:num,
+        //         url:url,
+        //         key:key,
+        //         count:count
+        //     };
+        //     temp_result.push(lineObject);
+        // }
+        // //排序临时表
+        // function sortArray(array){
+        //     array.sort(
+        //         function(object1,object2){
+        //             if(object1["num"]>object2["num"]){
+        //                 return 1;
+        //             }else if(object1["num"]<object2["num"]){
+        //                 return -1;
+        //             }else{
+        //                 return 0;
+        //             }
+        //         }
+        //     );
+        // }
+
+        // function showResult(){
+        //     sortArray(temp_result);
+        //     for(var i=0;i<temp_result.length;i++){
+        //         appendHtml(temp_result[i]["num"],temp_result[i]["url"],temp_result[i]["key"],temp_result[i]["count"]);
+        //     }
+        // }
+        //统计链接访问的次数
+        // var postCount=0;
         //计算URL返回的HTML包含的关键字
-        function count(url,key){
+        var time=0;
+        function count(num,url,key){
+            var result={};
             var xhr = new XMLHttpRequest();
             xhr.open('get', url, true);
             xhr.dataType="html";
             xhr.send();
             xhr.onreadystatechange=function() {
                 if (xhr.readyState == 4) {
+                    time++;
                     if (xhr.status == 200) {
                         var count=countNumber(this.responseText,key);
                         // var keyWord=undefined;
                         // var progressBar=undefined;
-                        appendHtml(url,key,count);
+                        // pushTempArray(num,url,key,count);
+                        // appendHtml(url,key,count);
+                        result={
+                            num:num,
+                            count:count,
+                            status:xhr.status
+                        };
                     }else{
-                        appendHtml(url,key,"访问异常");
+                        // if(postCount<=20){
+                        //     // postAgain(num,url,key);
+                        //     // postCount++;
+                        // }else{
+                        //     postCount=0;
+                        //     // pushTempArray(num,url,key,"请求异常");
+                        //     // appendHtml(num,url,key,"请求异常");
+                        // }
+                        result={
+                            num:num,
+                            count:"第二阶段异常",
+                            status:xhr.status
+                        };
                     }
+                }else{
+                    result={
+                        num:num,
+                        count:"第一阶段异常",
+                        status:xhr.readyState
+                    };
                 }
-
+                document.getElementById("progress1").setAttribute("value",time.toString());
+                document.getElementById("countNum").innerText=time.toString();
+                document.querySelector(".tr"+num).childNodes[4].innerHTML=result["count"];
+                document.querySelector(".tr"+num).childNodes[5].innerHTML=result["status"];
             }
         }
+        //开始统计
+        var basisCount=10;
+        function start(temp_result){
+            // document.getElementById("scrollText").innerText="开始统计。。🙃🙃🙃🙃";
+            for(var i=0;i<basisCount;i++){
+                var num=temp_result[0]["num"];
+                var url=temp_result[0]["url"];
+                var key=temp_result[0]["key"];
+                count(num,url,key);
+                // temp_result.pop();
+                temp_result.shift();
+                if(temp_result.length==0){
+                    // document.getElementById("scrollText").innerText="文件统计完成🙃🙃🙃🙃";
+                    return;
+                }
+            }
+
+            if(temp_result.length!=0&&time%10==0){
+                start(temp_result);
+            }
+        }
+
         //计算字符串中包含的关键字
         function countNumber(str,key){
-            var reg=new RegExp(key,"g");
+            var reg=new RegExp(key,"ig");
             var result=str.match(reg);
             if(result==undefined){
                 return 0;
@@ -69,9 +172,10 @@
             }
         }
         //生成查询的表格
-        function appendHtml(url,key,count){
+        function appendHtml(num,url,key,progress,count,statusCode){
             var table=document.getElementById("tableContent");
             var tr=document.createElement("tr");
+            tr.setAttribute("class","tr"+num);
             tr.setAttribute("name","row");
             table.appendChild(tr);
             for(var i=0;i<arguments.length;i++){
@@ -86,34 +190,93 @@
             for(var i=nodes.length-1;i>=0;i--){
                 nodes[i].remove();
             }
-            document.getElementById("scrollText").innerText="啦啦啦啦啦啦啦啦😎😎😎😎";
+            temp_result=[];
+            time=0;
+            document.getElementById("progress2").style.display="none";
+            document.getElementById("progress1").setAttribute("value","0");
+            // document.getElementById("scrollText").innerText="啦啦啦啦啦啦啦啦😎😎😎😎";
         }
+
+        var columnDelimiter = ","; //列分割符
+        var lineDelimiter = "\n";  //行分割符
+        //下载查询结果
+        function downLoad(){
+            var trs = document.getElementsByName("row");
+            var result = '';
+            for(var i=0, l=trs.length; i<l; i++){
+                var tds = trs[i].getElementsByTagName('td');
+                for(var j=0, l2=tds.length; j<l2; j++){
+                    result += tds[j].innerHTML + columnDelimiter;
+                }
+                result += lineDelimiter;
+            }
+            result = "\ufeff" + result;
+            var blob = new Blob([result], {type: 'text/csv;charset=UTF-8;'});
+            var downloadLink = document.createElement("a");
+            if ('download' in downloadLink) {
+                var url = URL.createObjectURL(blob);
+                downloadLink.href = url;
+                downloadLink.download = "result.csv";
+                downloadLink.hidden = true;
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+            }else{
+                if(navigator.msSaveBlob){
+                    navigator.msSaveBlob(blob, "result.csv");
+                }
+            }
+        }
+
+        // //为查询结果排序
+        // function sortResult(){
+        //     var result=[];
+        //     var trs = document.getElementsByName("row");
+        //     for(var i=0, l=trs.length; i<l; i++){
+        //         var tds = trs[i].getElementsByTagName('td');
+        //         for(var j=0, l2=tds.length; j<l2; j++){
+        //
+        //         }
+        //         result += lineDelimiter;
+        //     }
+        // }
     </script>
     </head>
 <body>
 <div>
 
 </div>
-<DIV style="float:left;width:33%;">
+<DIV style="float:left;width:38%;">
     <diV style="float:left;">
         <INPUT id="file" type="file" />
     </diV>
     <div style="float:RIGHT;">
         <button onclick="getCount()">开始统计</button>
+        <button onclick="downLoad()">下载结果</button>
         <button onclick="clearTable()" style="margin-right:0px;">清空查询列表</button>
         <!--<button>下载</button>-->
     </div>
 </DIV>
-<DIV style="float:left;width:67%;">
-    <marquee id="scrollText" behavior=alternate scrollamount=10 direction=right>啦啦啦啦啦啦啦啦😎😎😎😎</marquee>
+<!--<DIV style="float:left;width:61%;">-->
+    <!--<marquee id="scrollText" behavior=alternate scrollamount=10 direction=right>啦啦啦啦啦啦啦啦😎😎😎😎</marquee>-->
+<!--</DIV>-->
+<DIV style="float:left;width:61%;">
+    <progress id ="progress1" style="width:100%;-webkit-appearance:none;margin-left:12px;" value="0" max="100">
+    </progress>
+    <DIV id="progress2" style="position:relative;font-size:12px;top:-19px;left:430px;display: none;">
+        <span id="countNum"></span>
+        <span>/</span>
+        <span id="totalNum"></span>
+    </DIV>
 </DIV>
 <table id="tableContent">
     <tr>
+        <th>编号</th>
         <th>链接</th>
         <th>关键字</th>
+        <th>进度条</th>
         <th>统计</th>
-        <!--<th>keyWord</th>-->
-        <!--<th>进度条</th>-->
+        <th>状态码</th>
     </tr>
 </table>
 </body>
